@@ -1,0 +1,34 @@
+<div class="container">
+	<h1>Select a survey to compile</h1>
+	<hr/>
+
+	<table class="table table-striped table-condensed span10">
+		<tr>
+			<th>Name</th>
+			<th>Type</th>
+			<th>Type details</th>
+			<th>Description</th>
+			<th>&nbsp;</th>
+		<tr>
+		<tr ng-repeat="survey in surveyTemplates|orderBy:'name'|orderBy:'typeName'|orderBy:'type'">
+			<td>
+				{{survey.name}}
+			</td>
+			<td>
+				{{survey.type}}
+			</td>
+			<td>
+				{{survey.typeName}}
+			</td>
+			<td>
+				{{survey.description}}
+			</td>
+			<td>
+				 
+				 <a href="/survey/{{survey._id}}/123456" class="btn btn-success" target="_blank">Compile survey <i class="icon-play icon-white"/></button> 
+			</td>
+		</tr>
+	</table>
+
+
+</div> <!-- /container -->

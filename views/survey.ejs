@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="SurveyBuilder">
+  <head>
+    <meta charset="utf-8">
+    <title><%= title %></title>
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+	<script src="/js/jquery-1.9.1.js"></script>
+	<script src="/js/jquery-ui-1.10.1.js"></script>
+	<script src="/js/angular-1.0.5.js"></script>
+	<script src="/js/bootstrap-2.3.0.js"></script>
+	<script src="/js/ng-controllers.js"></script>
+	<script src="/js/ng-client.js"></script>
+	
+    <!-- styles -->
+    <link href="/css/main.css" rel="stylesheet">
+	<link href="/css/smoothness/jquery-ui-1.10.1.css" rel="stylesheet">
+	<link href="/css/bootstrap-2.3.0.css" rel="stylesheet">
+	<link href="/css/bootstrap-responsive-2.3.0.css" rel="stylesheet">
+	
+	<link rel="shortcut icon" href="/img/favicon.ico">
+  </head>
+  <body id="theBody" ng-controller="CompileSingleSurveyController">
+
+
+		<div class="container">
+			<survey-viewer survey="<%=surveyId%>" user="<%=userId%>"></survey-viewer>
+			<hr>
+			
+			
+
+		</div> <!-- /container -->
+		
+		<footer style="text-align:center">
+				<p ><img src="/img/megusta.jpg" width="20"/> &copy; {{copyright}} for 
+						<a href="http://www.cloudspokes.com/challenges/2095" target="_blank" title="Wear test: Survey Builder I - 2095">CloudSpokes</a>
+				</p>
+			</footer>
+	  </body>
+</html>

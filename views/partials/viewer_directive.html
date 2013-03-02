@@ -1,0 +1,138 @@
+
+<div class="span10">
+	<h1>{{currentSurvey.name}}</h1>
+	<hr/>
+	<div ng-show="currentSurvey.description">
+		{{currentSurvey.description}}
+		<hr/>
+	</div>
+	
+	<div ng-show="submittedSurvey">
+		
+			<div class="alert alert-block alert-success">
+				<h4>Thank you!</h4>
+				Your opinion is our preciouussss.
+			</div>
+
+	</div>
+	
+	<div ng-show="!submittedSurvey">
+	<div ng-repeat="question in currentSurvey.questions" >	
+		
+		<div>
+			<div ng-show="question.type!='Section'">
+				<h3>{{question.answer.id}} - {{question.displayLabel}} <span ng-show="question.options.isRequired">*</span></h3>
+			</div>
+			<div ng-show="question.type=='Section'">
+				<h2 class="well well-small">{{question.displayLabel}}</h2>
+			</div>
+			
+			<!-- ERRORS -->
+			<div class="alert alert-error" ng-show="questionErrors[$index].length>0">
+			  <strong>Error!</strong>
+			  <div ng-repeat="msg in questionErrors[$index]">{{msg}}</div>
+			</div>
+			
+			<div ng-show="question.type == 'Range'">
+				  {{question.options.fromLabel}} <input type="text" class="input-small" ng-model="question.answer.valueMin" />
+						{{question.options.toLabel}} <input type="text" class="input-small" ng-model="question.answer.valueMax"/>
+						{{question.options.endLabel}} 
+			</div>
+			<div ng-show="question.type == 'Numeric'">
+				<input type="text" placeholder="Numeric value" ng-model="question.answer.value"/><br/>
+			</div>
+			<div ng-show="question.type == 'Rating'">
+					<div class="row">
+						<div class="span1">{{question.options.minValueLabel}}</div>
+						<div class="span4">
+							<slider min="question.options.minValue" max="question.options.maxValue" value="question.answer.value"></slider>
+						</div>
+						<div class="span1">{{question.options.maxValueLabel}}</div>
+					</div>
+			</div>
+			<div ng-show="question.type == 'Horizontal List'">
+				<span ng-repeat="v in question.options.values">
+					<input type="radio" name="__hl{{question.name}}" ng-model="question.answer.value"
+							value="{{v}}" />
+					<span ng-show="question.options.displayIndex">{{$index+1}}</span>
+					{{v}}
+				</span>	
+			</div>
+			<div ng-show="question.type == 'Single Selection'">
+				<select ng-show="question.options.displayIndex" ng-model="question.answer.value">
+					<option value="">--</option>
+					<option ng-repeat="v in question.options.values" value="{{v}}">
+						{{$index+1+'.'}} {{v}}
+					</option>
+				</select>		
+				<select ng-hide="question.options.displayIndex" ng-model="question.answer.value"> 
+					<option value="">--</option>
+					<option ng-repeat="v in question.options.values" value="{{v}}">
+						{{v}}
+					</option>
+				</select>		
+			</div>
+			
+			<div ng-show="question.type == 'Multiple Selection'">
+				<select ng-show="question.options.displayIndex" size="3" multiple="multiple" ng-model="question.answer.values">
+					<option ng-repeat="v in question.options.values" value="{{v}}">
+						{{$index+1+'.'}} {{v}}
+					</option>
+				</select>		
+				<select ng-hide="question.options.displayIndex" size="3" multiple="multiple" ng-model="question.answer.values"> 
+					<option ng-repeat="v in question.options.values" value="{{v}}">
+						{{v}}
+					</option>
+				</select>		
+			</div>
+			
+			<div ng-show="question.type == 'Free form text'">
+				<input type="text" ng-show="question.options.isSingleLine" placeholder="Single line answer" 
+						ng-model="question.answer.value"/><br/>
+				<textarea ng-hide="question.options.isSingleLine" placeholder="Multi line answer" 
+						 ng-model="question.answer.value"></textarea>	
+			</div>
+			
+			<hr/>
+		</div>
+			
+	</div>
+	<button class="btn btn-large btn-warning" ng-click="submitSurvey()" 
+						ng-disabled="isLoading==true">Submit</button>
+		<span ng-show="isLoading"><img src="/img/loading.gif"/> Loading...</span>
+	</div>
+</div>
+
+<!-- "Add new question" modal END -->
+
+<!-- save error! modal START -->
+<div id="errorSavingSurveyModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel3" aria-hidden="true">
+  <div class="modal-header">
+    <h3 id="myModalLabel3 label-danger">ERROR</h3>
+  </div>
+  <div class="modal-body alert alert-error alert-block">
+	<div id="message">Invalid data on survey. See details.</div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="j$('#errorSavingSurveyModal').modal('hide');">OK</button>
+  </div>
+</div>
+
+<!-- save error modal END -->
+
+<!-- info message modal START -->
+<div id="infoSurveyModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel4" aria-hidden="true">
+  <div class="modal-header">
+    <h4 id="myModalLabel3 label-danger">Info</h3>
+  </div>
+  <div class="modal-body alert alert-success alert-block">
+	<div id="message">Invalid data on survey. See details.</div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="j$('#infoSurveyModal').modal('hide');">OK</button>
+  </div>
+</div>
+
+<!-- info message modal END -->
+	
+

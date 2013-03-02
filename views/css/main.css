@@ -1,0 +1,12 @@
+body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      
+.arrow-pointer{
+	cursor:pointer;
+}
+
+.value-token{
+	margin-left:10px;
+}

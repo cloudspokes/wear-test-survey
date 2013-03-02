@@ -1,0 +1,379 @@
+
+<!-- SELECT SUERVEY TYPE/ TEMPLATE START -->
+<div class="hero-unit span8" ng-hide="showSurvey">
+	<table class="table ">
+		<tr><td>
+			<h4>Select a survey type:</h4>
+		</td><td>
+			
+			<select ng-model="surveyType" ng-change="selectedType()" 
+					ng-options="item as item.name group by item.group for item in surveyTypes | orderBy:'label'">
+				<option value="">--</option>
+			</select>
+		</td><td>
+			<button class="btn" ng-disabled="!surveyType._id" ng-click="newTemplate()">Create a new template &raquo;</button>
+		</td></tr>
+		<tr><td>
+			<h4>Available templates:</h4>
+		</td><td>
+			<select ng-model="surveyTemplateId" ng-options="item._id as item.name for item in surveyTemplates | orderBy:'name' | filter: surveyType.group" 
+				ng-disabled="!surveyType._id">
+				<option value="">--</option>
+			</select>
+		</td><td>
+			<button class="btn" ng-disabled="!surveyTemplateId" ng-click="loadTemplate()">Load an existing template &raquo;</button>
+		</td></tr>
+	</table>
+</div>
+<!-- SELECT SUERVEY TYPE/ TEMPLATE END-->
+
+
+<div ng-show="showSurvey" class="span10">
+	<!-- TEMPLATE TYPE INFOS  START -->
+	<div class="well well-small">
+		<table class="table" >
+			<tr><td>
+				Template type: 
+			</td><td>
+				{{currentSurvey.type}} - {{surveyType.name}}
+			</td></tr>
+			<tr><td>
+				Template name: 
+			</td><td>
+				<input type="text" ng-model="currentSurvey.name"/>
+			</td></tr>
+			<tr><td>
+				Template description: 
+			</td><td>
+				<textarea ng-model="currentSurvey.description"></textarea>
+			</td></tr>
+			<tr><td colspan="3">
+				<div class="alert alert-block alert-error" ng-show="surveyErrors.length>0">
+				  <h4>Error!</h4>
+				  <div ng-repeat="msg in surveyErrors">{{msg}}</div>
+				</div>
+			</td></tr>
+		</table>
+	</div>
+	<!-- TEMPLATE TYPE INFOS  END -->
+	
+	<!-- QUESTIONS START -->
+	<table class="table" >
+		<tr><td>
+			<p style="center">
+				<button class="btn btn-large btn-danger" data-target="#deleteSurveyModal" data-toggle="modal" ng-disabled="isLoading==true || !currentSurvey._id" ng-click="deleteSurvey()">Delete template</button>
+				<button class="btn btn-large btn-success" ng-click="saveTemplate()" ng-disabled="isLoading==true || currentSurvey.questions.length==0">Save template</button>
+				<button class="btn btn-large" ng-click="init()" ng-disabled="isLoading==true">Cancel</button>
+				<span ng-show="isLoading"><img src="/img/loading.gif"/> Loading...</span>
+			</p>
+		</td></tr>
+				<!-- questions -->
+		<tr ng-repeat="question in currentSurvey.questions" >
+			<td>
+				<button class="btn btn-danger" ng-click="removeQuestion(question)"><i class="icon-trash icon-white"></i></button>
+				 <button class="btn btn-warning" ng-click="moveQuestion($index,-1)" 
+				 			ng-disabled="$index==0"><i class="icon-arrow-up icon-white"></i></button>
+				 <button class="btn btn-warning" ng-click="moveQuestion($index,1)" 
+				 			ng-disabled="$index>=currentSurvey.questions.length-1"><i class="icon-arrow-down icon-white"></i></button>
+				<a href="#newQuestionModal" data-toggle="modal" class="btn btn-primary" ng-click="setInsertQuestionAtIndex($index)"
+					ng-disabled="isLoading==true">Add new question <i class="icon-plus icon-white"></i></a>
+				<br/><br/>
+				<div class="well well-small"><a  class="arrow-pointer" data-toggle="collapse" data-target="[id$=__question{{$index}}]">
+					  <span ng-hide="question.type=='Section'"><b>[{{$index+1}}] Question  - {{question.name}}</b></span>
+					  <span ng-show="question.type=='Section'"><b>[{{$index+1}}] Section - {{question.name}}</b></span>
+				</a>
+					 
+				</div>
+				<div class="alert alert-block alert-error" ng-show="questionErrors[$index].length>0">
+				  <h4>Error!</h4>
+				  <div ng-repeat="msg in questionErrors[$index]">{{msg}}</div>
+				</div>
+				<table width="100%">
+					<tr ><td width="50%">
+					<div class="form-horizontal collapse in" id="q__question{{$index}}">
+						<div class="control-group">
+							<label class="control-label" for="questionType">Type</label>
+							<div class="controls">
+							  <span id="questionType" placeholder="Question Name" >{{question.type}}</span>
+							</div>
+						</div>
+						<div class="control-group">
+							<label class="control-label" for="questionName">Name</label>
+							<div class="controls">
+							  <input type="text" id="questionName" placeholder="Question Name" ng-model="question.name">
+							</div>
+						</div>
+						<div class="control-group">
+							<label class="control-label" for="questionShortName">Short Name</label>
+							<div class="controls">
+							  <input type="text" id="questionShortName" placeholder="Question Short Name" ng-model="question.shortName">
+							</div>
+						</div>
+						<div class="control-group">
+							<label class="control-label" for="questionDisplayName">Display Name</label>
+							<div class="controls">
+							  <input type="text" id="questionDisplayName" placeholder="Question Display Name" ng-model="question.displayLabel">
+							</div>
+						</div>
+						<div class="control-group" ng-show="question.type!='Rating' && question.type!='Section'">
+							<label class="control-label" for="valueList">Required:</label>
+							<div class="controls">
+								<input type="checkbox" ng-model="question.options.isRequired"/>			
+							</div>
+						</div>
+						
+						<!-- RANGE -->
+						<div class="control-group" ng-show="question.type=='Range'">
+							<label class="control-label" for="fromLabel">Response details</label>
+							<div class="controls">
+								<input type="text" id="fromLabel" placeholder="From" ng-model="question.options.fromLabel"><br/>
+								<input type="text" id="toLabel" placeholder="To" ng-model="question.options.toLabel"><br/>
+								<input type="text" id="endLabel" placeholder="End response" ng-model="question.options.endLabel"><br/>
+							  
+							</div>
+						</div>
+						<!-- RANGE -->
+										
+						<!-- RATING -->
+						<div class="control-group" ng-show="question.type=='Rating'">
+							<label class="control-label" for="minValueLabel">Response details</label>
+							<div class="controls">
+								<input type="text" id="minValueLabel" placeholder="Min Label" ng-model="question.options.minValueLabel"><br/>
+								<input type="text" id="minValue" placeholder="Min Value" ng-model="question.options.minValue"><br/>
+								<input type="text" id="maxValueLabel" placeholder="Max Label" ng-model="question.options.maxValueLabel"><br/>
+								<input type="text" id="maxValue" placeholder="Max Value" ng-model="question.options.maxValue"><br/>
+								<input type="text" id="defaultValue" placeholder="Default Value" ng-model="question.options.defaultValue"><br/>
+								
+							</div>
+						</div>
+						<!-- RATING -->
+										
+						<!-- HORIZONTAL LIST -->
+						<div class="control-group" ng-show="question.type=='Horizontal List'">
+							<label class="control-label" for="valueList">Values (comma separated list)</label>
+							<div class="controls">
+								<textarea ng-model="question.options._tempValue" ng-change="newTextValue(question)"></textarea>
+							</div>
+						</div>
+						<div class="control-group" ng-show="question.type=='Horizontal List'">
+							<label class="control-label" for="valueList">Show index:</label>
+							<div class="controls">
+								<input type="checkbox" ng-model="question.options.displayIndex"/>			
+							</div>
+						</div>
+						<!-- HORIZONTAL LIST -->
+						
+						<!-- Single Selection -->
+						<div class="control-group" ng-show="question.type=='Single Selection'">
+							<label class="control-label" for="valueList">Values (comma separated list)</label>
+							<div class="controls">
+								<textarea  ng-model="question.options._tempValue" ng-change="newTextValue(question)"></textarea>
+							</div>
+						</div>
+						<div class="control-group" ng-show="question.type=='Single Selection'">
+							<label class="control-label" for="valueList">Show index:</label>
+							<div class="controls">
+								<input type="checkbox" ng-model="question.options.displayIndex"/>		
+							</div>
+						</div>
+						<!-- Single Selection -->
+						
+						<!-- Multiple Selection -->
+						<div class="control-group" ng-show="question.type=='Multiple Selection'">
+							<label class="control-label" for="valueList">Values (comma separated list)</label>
+							<div class="controls">
+								<textarea  ng-model="question.options._tempValue" ng-change="newTextValue(question)"></textarea>
+							</div>
+						</div>
+						<div class="control-group" ng-show="question.type=='Multiple Selection'">
+							<label class="control-label" for="valueList">Show index:</label>
+							<div class="controls">
+								<input type="checkbox" ng-model="question.options.displayIndex"/>		
+							</div>
+						</div>
+						<!-- Multiple Selection -->
+						
+						<!-- Free form text -->
+						<div class="control-group" ng-show="question.type=='Free form text'">
+							<label class="control-label" for="valueList">Single line:</label>
+							<div class="controls">
+								<input type="checkbox" ng-model="question.options.isSingleLine"/>
+							</div>
+						</div>
+						<div class="control-group" ng-show="question.type=='Free form text'">
+							<label class="control-label" for="valueList">Numeric:</label>
+							<div class="controls">
+								<input type="checkbox" ng-model="question.options.isNumeric"/>		
+							</div>
+						</div>				
+						<!-- Free form text -->
+						
+					</div>
+				</td>
+				<td width="50%" class="well">
+					<!-- PREVIEW QUESTIOn -->
+					<div class="form-horizontal collapse in" id="p__question{{$index}}">
+						<div class="muted">PREVIEW</div>
+						<h3>{{question.displayLabel}} <span ng-show="question.options.isRequired">*</span></h3>
+						<div ng-show="question.type == 'Range'">
+							  {{question.options.fromLabel}} <input type="text" class="input-small" />
+									<br/>{{question.options.toLabel}} <input type="text" class="input-small" />
+									{{question.options.endLabel}} 
+						</div>
+						<div ng-show="question.type == 'Numeric'">
+							<input type="text" placeholder="Numeric value" /><br/>
+						</div>
+						<div ng-show="question.type == 'Rating'">
+								<div class="row">
+									<div class="span1">{{question.options.minValueLabel}}</div>
+									<div class="span2">
+										<slider min="question.options.minValue" max="question.options.maxValue" value="question.options.defaultValue"></slider>
+									</div>
+									<div class="span1">{{question.options.maxValueLabel}}</div>
+								</div>
+						</div>
+						<div ng-show="question.type == 'Horizontal List'">
+							<span ng-repeat="v in question.options.values">
+								<input type="radio" name="chk__{{$index}}"  />
+								<span ng-show="question.options.displayIndex">{{$index+1}}</span>
+								{{v}}
+							</span>	
+						</div>
+						<div ng-show="question.type == 'Single Selection'">
+							<select ng-show="question.options.displayIndex">
+								<option ng-repeat="v in question.options.values" >
+									{{$index+1+'.'}} {{v}}
+								</option>
+							</select>		
+							<select ng-hide="question.options.displayIndex"> 
+								<option ng-repeat="v in question.options.values" >
+									{{v}}
+								</option>
+							</select>		
+						</div>
+						
+						<div ng-show="question.type == 'Multiple Selection'">
+							<select ng-show="question.options.displayIndex" size="3" multiple="multiple">
+								<option ng-repeat="v in question.options.values" >
+									{{$index+1+'.'}} {{v}}
+								</option>
+							</select>		
+							<select ng-hide="question.options.displayIndex" size="3" multiple="multiple"> 
+								<option ng-repeat="v in question.options.values" >
+									{{v}}
+								</option>
+							</select>		
+						</div>
+						
+						<div ng-show="question.type == 'Free form text'">
+							<input type="text" ng-show="question.options.isSingleLine" placeholder="Single line answer" /><br/>
+							<textarea ng-hide="question.options.isSingleLine" placeholder="Multi line answer" ></textarea>	
+						</div>
+						
+					</div>
+				</td></tr>
+				</table>
+			</td>
+		</tr>
+
+		<tr><td>
+			<a href="#newQuestionModal" data-toggle="modal" class="btn btn-primary" ng-click="setInsertQuestionAtIndex(-1)"
+				ng-disabled="isLoading==true">Add new question <i class="icon-plus icon-white"></i></a>
+		</td></tr>
+		<tr><td>
+			<p style="center">
+				<button class="btn btn-large btn-danger" data-target="#deleteSurveyModal" data-toggle="modal" 
+						ng-disabled="isLoading==true || !currentSurvey._id" ng-click="deleteSurvey()">Delete template</button>
+				<button class="btn btn-large btn-success" ng-click="saveTemplate()" 
+						ng-disabled="isLoading==true ||currentSurvey.questions.length==0">Save template</button>
+				<button class="btn btn-large" ng-click="init()" ng-disabled="isLoading==true">Cancel</button>
+				<span ng-show="isLoading"><img src="/img/loading.gif"/> Loading...</span>
+			</p>
+		</td></tr>
+	</table>
+	<!-- QUESTIONS END -->
+</div>
+
+<!-- "Add new question" modal START -->
+<div id="newQuestionModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="myModalLabel">Select a new question type</h3>
+  </div>
+  <div class="modal-body">
+    
+    	<table class="table">
+    		<tr>
+				<td><button class="btn" data-dismiss="modal" ng-click="selectQuestionType('Numeric')">Numeric</button></td>
+				<td><button class="btn" data-dismiss="modal" ng-click="selectQuestionType('Range')">Range</button></td>
+				<td><button class="btn" data-dismiss="modal" ng-click="selectQuestionType('Rating')">Rating</button></td>
+			</tr><tr>
+				<td><button class="btn" data-dismiss="modal" ng-click="selectQuestionType('Horizontal List')">Horizontal List</button></td>
+				<td><button class="btn" data-dismiss="modal" ng-click="selectQuestionType('Single Selection')">Single Selection</button></td>
+				<td><button class="btn" data-dismiss="modal" ng-click="selectQuestionType('Multiple Selection')">Multiple Selection</button></td>
+			</tr><tr>
+				<td><button class="btn" data-dismiss="modal" ng-click="selectQuestionType('Free form text')">Free form text</button></td>
+				<td><button class="btn" data-dismiss="modal" ng-click="selectQuestionType('Section')">Section</button></td>
+				<td></td>
+    		</tr>
+    	</table>
+    
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+    <button class="btn btn-primary">Add question...</button>
+  </div>
+</div>
+
+<!-- "Add new question" modal END -->
+
+<!-- Are you sure do you want to delete survey? modal START -->
+<div id="deleteSurveyModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel2" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="myModalLabel2">WARNING</h3>
+  </div>
+  <div class="modal-body">
+    Are you sure do you want to delete this survey?
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+    <button class="btn btn-danger" data-dismiss="modal" ng-click="deleteTemplate()">YES</button>
+  </div>
+</div>
+
+<!-- Are you sure do you want to delete survey? modal END -->
+
+<!-- "Add new question" modal END -->
+
+<!-- save error! modal START -->
+<div id="errorSavingSurveyModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel3" aria-hidden="true">
+  <div class="modal-header">
+    <h3 id="myModalLabel3 label-danger">ERROR</h3>
+  </div>
+  <div class="modal-body alert alert-error alert-block">
+	<div id="message">Invalid data on survey. See details.</div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="j$('#errorSavingSurveyModal').modal('hide');">OK</button>
+  </div>
+</div>
+
+<!-- save error modal END -->
+
+<!-- info message modal START -->
+<div id="infoSurveyModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel4" aria-hidden="true">
+  <div class="modal-header">
+    <h4 id="myModalLabel3 label-danger">Info</h3>
+  </div>
+  <div class="modal-body alert alert-success alert-block">
+	<div id="message">Invalid data on survey. See details.</div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="j$('#infoSurveyModal').modal('hide');">OK</button>
+  </div>
+</div>
+
+<!-- info message modal END -->
+	
+
