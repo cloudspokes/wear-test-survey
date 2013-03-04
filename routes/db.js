@@ -1,15 +1,21 @@
 var mongo = require('mongodb');
+var constants = require('../conf/constants');
  
 var Server = mongo.Server,
     Db = mongo.Db,
     BSON = mongo.BSONPure;
  
-var server = new Server('localhost', 27017, {auto_reconnect: true});
-db = new Db('surveydb', server);
+//var server = new Server('localhost', 27017, {auto_reconnect: true});
+// mongodb://<dbuser>:<dbpassword>@ds029837.mongolab.com:29837/meshtest1
+//var server = new Server('kyle:4pp1r10@ds029837.mongolab.com', 29837, {auto_reconnect: true});
+var server = new Server(constants.MongoLab.host, constants.MongoLab.port, {auto_reconnect: true});
+
+//db = new Db('surveydb', server);
+db = new Db(constants.MongoLab.db, server);
 
 db.open(function(err, db) {
     if(!err) {
-        console.log("Connected to 'seruveydb' database");
+        console.log("Connected to "+constants.MongoLab.db +" database");
         /*
         db.collection('surveys', {safe:true}, function(err, collection) {
             if (err) {
@@ -18,8 +24,25 @@ db.open(function(err, db) {
             }
         });
         */
-    }
+      // now do authticate
+    	db.authenticate(constants.MongoLab.user,constants.MongoLab.password, function(err, collection) {
+    	if (err) {
+    	 console.log('ERROR AUTHENTICATING');
+    	 console.log(err);
+    	 process.exit(1);
+    	}
+    	
+
+    	if (!err) {
+    	console.log('Authenticated Sucessfully to '+constants.MongoLab.host+' user: '+constants.MongoLab.user);
+    	}
+    });
+    	  
+
+    }	  // if not error top loop
 });
+
+
 
 
 exports.listAll = function(req, res) {

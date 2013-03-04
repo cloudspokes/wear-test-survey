@@ -1,8 +1,11 @@
 var express = require('express');
-var app = express();
+var app = express.createServer();
 var constants = require('./conf/constants');
 var db = require('./routes/db');
-var port    = parseInt(app.settings.env.PORT, 10) || constants.Defaults.port;
+// would not bind to port on Heroku try:
+//http://stackoverflow.com/questions/7503632/node-js-port-issue-on-heroku-cedar-stack
+//var port    = parseInt(app.settings.env.PORT, 10) || constants.Defaults.port;
+var port = process.env.PORT || constants.Defaults.port;  
 
  
 app.configure(function () {
