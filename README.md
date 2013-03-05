@@ -1,7 +1,7 @@
 # install
 
--npm install
--node app.js
+- npm install
+- node app.js
 
 
 # push to heroku
