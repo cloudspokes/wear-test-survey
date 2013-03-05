@@ -8,4 +8,3 @@
 git push heroku
 
 
-reset github
