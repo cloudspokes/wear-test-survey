@@ -21,10 +21,15 @@
 		
 		<div>
 			<div ng-show="question.type!='Section'">
-				<h3>{{question.answer.id}} - {{question.displayLabel}} <span ng-show="question.options.isRequired">*</span></h3>
+				<h3>{{question.answer.id}} - {{question.question}} <span ng-show="question.options.isRequired">*</span>
+					<a onmouseover="j$(this).tooltip({});j$(this).tooltip('show');" 
+								data-delay="0" data-placement="right" data-container="body"
+								ng-show="question.helpText" data-toggle="tooltip" data-original-title="{{question.helpText}}">
+								<span class="badge badge-warning" style="cursor:pointer;">?</span></a>
+				</h3>
 			</div>
 			<div ng-show="question.type=='Section'">
-				<h2 class="well well-small">{{question.displayLabel}}</h2>
+				<h2 class="well well-small">{{question.question}}</h2>
 			</div>
 			
 			<!-- ERRORS -->
@@ -33,11 +38,6 @@
 			  <div ng-repeat="msg in questionErrors[$index]">{{msg}}</div>
 			</div>
 			
-			<div ng-show="question.type == 'Range'">
-				  {{question.options.fromLabel}} <input type="text" class="input-small" ng-model="question.answer.valueMin" />
-						{{question.options.toLabel}} <input type="text" class="input-small" ng-model="question.answer.valueMax"/>
-						{{question.options.endLabel}} 
-			</div>
 			<div ng-show="question.type == 'Numeric'">
 				<input type="text" placeholder="Numeric value" ng-model="question.answer.value"/><br/>
 			</div>
@@ -50,46 +50,29 @@
 						<div class="span1">{{question.options.maxValueLabel}}</div>
 					</div>
 			</div>
-			<div ng-show="question.type == 'Horizontal List'">
-				<span ng-repeat="v in question.options.values">
-					<input type="radio" name="__hl{{question.name}}" ng-model="question.answer.value"
-							value="{{v}}" />
-					<span ng-show="question.options.displayIndex">{{$index+1}}</span>
-					{{v}}
-				</span>	
-			</div>
+			
 			<div ng-show="question.type == 'Single Selection'">
-				<select ng-show="question.options.displayIndex" ng-model="question.answer.value">
-					<option value="">--</option>
-					<option ng-repeat="v in question.options.values" value="{{v}}">
-						{{$index+1+'.'}} {{v}}
-					</option>
-				</select>		
-				<select ng-hide="question.options.displayIndex" ng-model="question.answer.value"> 
-					<option value="">--</option>
-					<option ng-repeat="v in question.options.values" value="{{v}}">
-						{{v}}
+					<div class="btn-group btn-group-vertical" data-toggle="buttons-radio">
+						<button ng-show="v.key.length>0" ng-repeat="v in question.options.values" type="button" class="btn btn-warning btn-block"
+							ng-click="question.answer.value=v.value">
+							&nbsp;&nbsp;{{v.key}}&nbsp;&nbsp;
+						</button>
+					</div>
+			</div>
+			
+			<div ng-show="question.type == 'Multiple Selection'">			
+				<select ng-model="question.answer.values" size="3" multiple="multiple"> 
+					<option ng-repeat="v in question.options.values" value="{{v.value}}">
+						{{v.key}}
 					</option>
 				</select>		
 			</div>
 			
-			<div ng-show="question.type == 'Multiple Selection'">
-				<select ng-show="question.options.displayIndex" size="3" multiple="multiple" ng-model="question.answer.values">
-					<option ng-repeat="v in question.options.values" value="{{v}}">
-						{{$index+1+'.'}} {{v}}
-					</option>
-				</select>		
-				<select ng-hide="question.options.displayIndex" size="3" multiple="multiple" ng-model="question.answer.values"> 
-					<option ng-repeat="v in question.options.values" value="{{v}}">
-						{{v}}
-					</option>
-				</select>		
-			</div>
 			
 			<div ng-show="question.type == 'Free form text'">
-				<input type="text" ng-show="question.options.isSingleLine" placeholder="Single line answer" 
+				<input type="text" ng-show="question.options.isSingleLine" placeholder="{{question.hintText}}" 
 						ng-model="question.answer.value"/><br/>
-				<textarea ng-hide="question.options.isSingleLine" placeholder="Multi line answer" 
+				<textarea ng-hide="question.options.isSingleLine" placeholder="{{question.hintText}}" 
 						 ng-model="question.answer.value"></textarea>	
 			</div>
 			
