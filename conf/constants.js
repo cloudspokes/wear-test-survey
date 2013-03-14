@@ -1,7 +1,7 @@
 exports.Defaults = {
 	defaultPageTitle: "Survey Builder",
 	appName: "Survey Builder",
-	port: 1235
+	port: 1234
 };
 
 exports.MongoLab = {
