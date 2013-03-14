@@ -8,11 +8,11 @@ var Constants =
 	compileURL : "/compile",
 	appName : "Survey Builder",
 	copyRight : "Enreeco 2013",
-	surveyTypes : [{_id: 1, group:'Profile', name: 'Test Profile'},
+	surveyTypes : [{_id: 1, group:'Profile', name: 'User Profile'},
 					{_id:2, group: 'Activity', name: 'Golf'},
 					{_id:3, group: 'Activity', name: 'Basketball'},
 					{_id:4, group: 'Activity', name: 'Running'},
-					{_id:5, group: 'Wear Test Survey', name: 'Test Suervey 1'},
+					{_id:5, group: 'Wear Test Survey', name: 'Test Survey 1'},
 					{_id:6, group: 'Design Project Scoring', name: 'Design Project Scoring 1'}],
 	RestURLs : {
 					templatesListURL : "/listTemplates",
@@ -135,6 +135,13 @@ module.directive('surveyBuilder', function($http){
 			if(!scope.surveyType) scope.surveyTemplateId = '';
 		};
 		
+		//adds a new section
+		scope.addNewSection = function(index)
+		{
+			scope.setInsertQuestionAtIndex(index);
+			scope.selectQuestionType('Section');
+		}
+		
 		//select a question type
 		scope.selectQuestionType = function(t)
 		{
@@ -149,14 +156,14 @@ module.directive('surveyBuilder', function($http){
 				scope.currentSurvey.questions.splice(scope.insertQuestionAtIndex,0,q);
 			
 			q.options.isRequired = false;
-			
+			/*
 			if('Range' == t)
 			{
 				q.options.fromLabel = 'I play football from';
 				q.options.toLabel = 'to';
 				q.options.endLabel = 'days a week.';				
 			}
-			else if('Rating' == t)
+			else */if('Rating' == t)
 			{
 				q.options.defaultValue = 5;
 				q.options.minValue = 0;
@@ -164,22 +171,28 @@ module.directive('surveyBuilder', function($http){
 				q.options.maxValueLabel = 'Max';
 				q.options.minValueLabel = 'Min';				
 			}
-			else if('Horizontal List' == t || 'Single Selection' == t || 'Multiple Selection' == t)
+			else if(/*'Horizontal List' == t ||*/ 'Single Selection' == t || 'Multiple Selection' == t)
 			{
 				q.options.values = [];	
-				q.options.displayIndex = true;			
+				scope.newKeyValue(q,0);
+				//q.options.displayIndex = true;			
+				/*
 				q.options._tempValue = 'value1,value2,value3'
 				scope.newTextValue(q);
+				*/
 			}
 			else if('Free form text' == t)
 			{
 				q.options.isSingleLine = true;
 				q.options.isNumeric = false;
 			}
-
+			q.helpText = '';
+			//generate a unique id for each question
+			q.unique_identifier = t.replace(/\s+/g,'')+'_'+guid();
 		}
 		
 		//onChange values list
+		/*
 		scope.newTextValue = function(question)
 		{
 			question.options.values = [];
@@ -194,7 +207,25 @@ module.directive('surveyBuilder', function($http){
 			}
 			//scope.$apply();
 		}
+		*/
 		
+		//adds a new key/value pair to the select list (or mutiple) @ index
+		scope.newKeyValue = function(question,index)
+		{
+			question.options.values.splice(index,0,{key:'',value:'',_editing:true});
+		};
+		
+		//removes a key/value pair @ index
+		scope.removeKeyValue = function(question,index)
+		{
+			question.options.values.splice(index,1);
+		};
+		
+		//move question key/value pair to index position
+		scope.moveKeyValue = function(question, from, to)
+		{
+			question.options.values.move(from, to);
+		};
 		
 		//deletes a question
 		scope.removeQuestion = function(question)
@@ -236,9 +267,9 @@ module.directive('surveyBuilder', function($http){
 				//check values
 				var question = scope.currentSurvey.questions[iq];
 				var qe = [];
-				if(question.name == null || question.name == undefined || question.name.length==0)qe.push('Set a valid name');
-				if(question.shortName == null || question.shortName == undefined || question.shortName.length==0)qe.push('Set a valid short name');
-				if(question.displayLabel == null || question.displayLabel == undefined || question.displayLabel.length==0)qe.push('Set a valid display label');
+				//if(question.keywords == null || question.keywords == undefined || question.keywords.length==0)qe.push('Set the keywords');
+				//if(question.unique_identifier == null || question.unique_identifier == undefined || question.unique_identifier.length==0)qe.push('Set a valid unique name');
+				if(question.question == null || question.question == undefined || question.question.length==0)qe.push('Set a valid question');
 				if(question.type == 'Rating')
 				{				
 					if(question.options.minValue === null || question.options.minValue === undefined || question.options.minValue.length==0)
@@ -267,10 +298,17 @@ module.directive('surveyBuilder', function($http){
 						
 				}
 				
-				if(question.type == 'Horizontal List' || question.type == 'Single Selection' || question.type == 'Multiple Selection' )
+				if(/*question.type == 'Horizontal List' ||*/ question.type == 'Single Selection' || question.type == 'Multiple Selection' )
 				{
 					if(!question.options.values || question.options.values.length==0)
 						qe.push('Must set at least one value.');
+					else
+					{
+						for(var iv =0; iv < question.options.values.length; iv++)
+						{
+							delete question.options.values[iv]._editing;	//removes the helper "_editing" variable, that should not be stored in the db
+						}
+					}
 				}
 				
 				foundError |= qe.length>0;
@@ -402,11 +440,12 @@ module.directive('surveyViewer', function($http){
 					{
 						question.answer.value = '';
 					}
+					/*
 					else
 					{
 						question.answer.valueMin = '';
 						question.answer.valueMax = '';
-					}
+					}*/
 				}
 			}
 		}
@@ -431,7 +470,7 @@ module.directive('surveyViewer', function($http){
 						if(question.options.isRequired && (!question.answer.values || question.answer.values.length==0))
 							qe.push('Value required.');
 					}
-					else if(question.type != 'Range')
+					else /*if(question.type != 'Range')*/
 					{
 						if((question.answer.value == undefined || question.answer.value == null ||
 							question.answer.value.toString().trim().length == 0))
@@ -441,6 +480,7 @@ module.directive('surveyViewer', function($http){
 						else if((question.options.isNumeric || question.type === 'Numeric') && question.answer.value.toString().match(/^-?[0-9]+$/)==null)
 							qe.push('Value must be numeric ');
 					}
+					/*
 					else
 					{
 						if(question.answer.valueMin == undefined || question.answer.valueMin == null ||
@@ -452,7 +492,7 @@ module.directive('surveyViewer', function($http){
 						else if(question.answer.valueMin.toString().match(/^-?[0-9]+$/)==null 
 								|| question.answer.valueMax.toString().match(/^-?[0-9]+$/)==null)
 							qe.push('Values must be numeric ');
-					}
+					}*/
 					
 				
 				foundError |= qe.length>0;
@@ -597,3 +637,17 @@ Array.prototype.move = function (old_index, new_index) {
     this.splice(new_index, 0, this.splice(old_index, 1)[0]);
     return this; // for testing purposes
 };
+
+/*
+	Generate a unique GUID
+*/
+function s4() {
+  return Math.floor((1 + Math.random()) * 0x10000)
+             .toString(16)
+             .substring(1);
+};
+
+function guid() {
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+         s4() + '-' + s4() + s4() + s4();
+}

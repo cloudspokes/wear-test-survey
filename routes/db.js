@@ -24,6 +24,7 @@ db.open(function(err, db) {
             }
         });
         */
+        
       // now do authticate
     	db.authenticate(constants.MongoLab.user,constants.MongoLab.password, function(err, collection) {
     	if (err) {

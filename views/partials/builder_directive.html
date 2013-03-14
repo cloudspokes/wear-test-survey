@@ -13,9 +13,9 @@
 		</td><td>
 			<button class="btn" ng-disabled="!surveyType._id" ng-click="newTemplate()">Create a new template &raquo;</button>
 		</td></tr>
-		<tr><td>
-			<h4>Available templates:</h4>
-		</td><td>
+		<tr ng-show="surveyType._id"><td>
+				<h4 >Available templates:</h4>				
+			</td><td>
 			<select ng-model="surveyTemplateId" ng-options="item._id as item.name for item in surveyTemplates | orderBy:'name' | filter: surveyType.group" 
 				ng-disabled="!surveyType._id">
 				<option value="">--</option>
@@ -70,49 +70,59 @@
 				<!-- questions -->
 		<tr ng-repeat="question in currentSurvey.questions" >
 			<td>
-				<button class="btn btn-danger" ng-click="removeQuestion(question)"><i class="icon-trash icon-white"></i></button>
+				<button class="btn btn-danger" ng-click="removeQuestion(question)"
+						ng-disabled="isLoading==true"><i class="icon-trash icon-white"></i></button>
 				 <button class="btn btn-warning" ng-click="moveQuestion($index,-1)" 
-				 			ng-disabled="$index==0"><i class="icon-arrow-up icon-white"></i></button>
+				 			ng-disabled="$index==0 || isLoading==true"><i class="icon-arrow-up icon-white"></i></button>
 				 <button class="btn btn-warning" ng-click="moveQuestion($index,1)" 
-				 			ng-disabled="$index>=currentSurvey.questions.length-1"><i class="icon-arrow-down icon-white"></i></button>
+				 			ng-disabled="$index>=currentSurvey.questions.length-1 || isLoading==true"><i class="icon-arrow-down icon-white"></i></button>
 				<a href="#newQuestionModal" data-toggle="modal" class="btn btn-primary" ng-click="setInsertQuestionAtIndex($index)"
 					ng-disabled="isLoading==true">Add new question <i class="icon-plus icon-white"></i></a>
+				<button class="btn btn-primary" ng-click="addNewSection($index)" 
+				 			ng-disabled="isLoading==true">Add new section <i class="icon-plus icon-white"></i></button>
 				<br/><br/>
-				<div class="well well-small"><a  class="arrow-pointer" data-toggle="collapse" data-target="[id$=__question{{$index}}]">
-					  <span ng-hide="question.type=='Section'"><b>[{{$index+1}}] Question  - {{question.name}}</b></span>
-					  <span ng-show="question.type=='Section'"><b>[{{$index+1}}] Section - {{question.name}}</b></span>
-				</a>
-					 
+				<div class="well well-small">
+					<a  class="arrow-pointer" data-toggle="collapse" data-target="[id$=__question{{$index}}]">
+					  <span ng-hide="question.type=='Section'"><b>[{{$index+1}}] Question  - {{question.question}}</b></span>
+					  <span ng-show="question.type=='Section'"><b>[{{$index+1}}] Section - {{question.question}}</b></span>
+					</a>
 				</div>
-				<div class="alert alert-block alert-error" ng-show="questionErrors[$index].length>0">
-				  <h4>Error!</h4>
-				  <div ng-repeat="msg in questionErrors[$index]">{{msg}}</div>
-				</div>
+				<div id="q__question{{$index}}" class="collapse in">
 				<table width="100%">
 					<tr ><td width="50%">
-					<div class="form-horizontal collapse in" id="q__question{{$index}}">
-						<div class="control-group">
+					<div class="form-horizontal" >
+						<div class="alert alert-block alert-error" ng-show="questionErrors[$index].length>0">
+				  			<h4>Error!</h4>
+		    				<div ng-repeat="msg in questionErrors[$index]">{{msg}}</div>
+						</div>
+						<div class="control-group" ng-hide="question.type=='Section'">
 							<label class="control-label" for="questionType">Type</label>
 							<div class="controls">
 							  <span id="questionType" placeholder="Question Name" >{{question.type}}</span>
 							</div>
 						</div>
-						<div class="control-group">
-							<label class="control-label" for="questionName">Name</label>
+						<div class="control-group" ng-show="question.type=='Section'">
+							<label class="control-label"  for="questionDisplayName">Section title</label>
 							<div class="controls">
-							  <input type="text" id="questionName" placeholder="Question Name" ng-model="question.name">
+							  <input type="text" id="questionDisplayName" placeholder="Section title" ng-model="question.question"/>
 							</div>
 						</div>
-						<div class="control-group">
-							<label class="control-label" for="questionShortName">Short Name</label>
+						<div class="control-group" ng-hide="question.type=='Section'">
+							<label class="control-label"  for="questionDisplayName">Question</label>
 							<div class="controls">
-							  <input type="text" id="questionShortName" placeholder="Question Short Name" ng-model="question.shortName">
+							  <input type="text" id="questionDisplayName" placeholder="Question/instructions that will be on the survey" ng-model="question.question"/>
 							</div>
 						</div>
-						<div class="control-group">
-							<label class="control-label" for="questionDisplayName">Display Name</label>
+						<div class="control-group" ng-hide="question.type=='Section'">
+							<label class="control-label" for="questionName">Keywords</label>
 							<div class="controls">
-							  <input type="text" id="questionDisplayName" placeholder="Question Display Name" ng-model="question.displayLabel">
+							  <input type="text" id="questionName" placeholder="Used to identify or search for an existing question" ng-model="question.keywords"/>
+							</div>
+						</div>
+						<div class="control-group" ng-hide="question.type=='Section'">
+							<label class="control-label" for="questionShortName">Unique Question Identifier</label>
+							<div class="controls">
+							  <input type="text" disabled="true" id="questionShortName" placeholder="Use to reference the question in the database" ng-model="question.unique_identifier"/>
 							</div>
 						</div>
 						<div class="control-group" ng-show="question.type!='Rating' && question.type!='Section'">
@@ -121,89 +131,103 @@
 								<input type="checkbox" ng-model="question.options.isRequired"/>			
 							</div>
 						</div>
-						
-						<!-- RANGE -->
-						<div class="control-group" ng-show="question.type=='Range'">
-							<label class="control-label" for="fromLabel">Response details</label>
+						<div class="control-group" ng-hide="question.type=='Section'">
+							<label class="control-label" for="questionShortName">Help text</label>
 							<div class="controls">
-								<input type="text" id="fromLabel" placeholder="From" ng-model="question.options.fromLabel"><br/>
-								<input type="text" id="toLabel" placeholder="To" ng-model="question.options.toLabel"><br/>
-								<input type="text" id="endLabel" placeholder="End response" ng-model="question.options.endLabel"><br/>
-							  
+							  <textarea id="questionHelpText" placeholder="Use show a helper tooltip" ng-model="question.helpText"></textarea>
 							</div>
 						</div>
-						<!-- RANGE -->
-										
+						
 						<!-- RATING -->
 						<div class="control-group" ng-show="question.type=='Rating'">
-							<label class="control-label" for="minValueLabel">Response details</label>
+							<label class="control-label" for="minValueLabel">Minimum label</label>
 							<div class="controls">
-								<input type="text" id="minValueLabel" placeholder="Min Label" ng-model="question.options.minValueLabel"><br/>
-								<input type="text" id="minValue" placeholder="Min Value" ng-model="question.options.minValue"><br/>
-								<input type="text" id="maxValueLabel" placeholder="Max Label" ng-model="question.options.maxValueLabel"><br/>
-								<input type="text" id="maxValue" placeholder="Max Value" ng-model="question.options.maxValue"><br/>
-								<input type="text" id="defaultValue" placeholder="Default Value" ng-model="question.options.defaultValue"><br/>
-								
+								<input type="text" id="minValueLabel" placeholder="Min Label" ng-model="question.options.minValueLabel"/><br/>
+							</div>
+							<label class="control-label" for="minValueLabel">Minimum value</label>
+							<div class="controls">
+								<input type="text" id="minValue" placeholder="Min Value" ng-model="question.options.minValue"/><br/>
+							</div>
+							<label class="control-label" for="minValueLabel">Maximum label</label>
+							<div class="controls">
+								<input type="text" id="maxValueLabel" placeholder="Max Label" ng-model="question.options.maxValueLabel"/><br/>
+							</div>
+							<label class="control-label" for="minValueLabel">Maximum value</label>
+							<div class="controls">
+								<input type="text" id="maxValue" placeholder="Max Value" ng-model="question.options.maxValue"/><br/>
+							</div>
+							<label class="control-label" for="minValueLabel">Deafault value</label>
+							<div class="controls">
+								<input type="text" id="defaultValue" placeholder="Default Value" ng-model="question.options.defaultValue"/><br/>
 							</div>
 						</div>
 						<!-- RATING -->
-										
-						<!-- HORIZONTAL LIST -->
-						<div class="control-group" ng-show="question.type=='Horizontal List'">
-							<label class="control-label" for="valueList">Values (comma separated list)</label>
-							<div class="controls">
-								<textarea ng-model="question.options._tempValue" ng-change="newTextValue(question)"></textarea>
-							</div>
-						</div>
-						<div class="control-group" ng-show="question.type=='Horizontal List'">
-							<label class="control-label" for="valueList">Show index:</label>
-							<div class="controls">
-								<input type="checkbox" ng-model="question.options.displayIndex"/>			
-							</div>
-						</div>
-						<!-- HORIZONTAL LIST -->
 						
-						<!-- Single Selection -->
-						<div class="control-group" ng-show="question.type=='Single Selection'">
-							<label class="control-label" for="valueList">Values (comma separated list)</label>
+						<!-- Single / Multiple Selection -->
+						<div class="control-group" ng-show="question.type=='Single Selection' || question.type=='Multiple Selection'">
+							<label class="control-label" >Values</label>
 							<div class="controls">
-								<textarea  ng-model="question.options._tempValue" ng-change="newTextValue(question)"></textarea>
+							<table class="table-condensed">
+									<tr>
+										<th></th><th></th>
+										<th>Value</th>
+										<th></th>
+										<th>Key</th>
+										<th></th><th></th>
+									</tr>
+									<tr ng-repeat="v in question.options.values">
+										<td>
+											<!-- new value button -->
+											<button class="btn btn-mini btn-success" ng-click="newKeyValue(question,$index+1)"><i class="icon-plus icon-white"></i></button>
+										</td>
+										<td>
+											<button class="btn btn-mini btn-danger" ng-click="removeKeyValue(question,$index)"
+												ng-disabled="question.options.values.length <= 1"><i class="icon-remove icon-white"></i></button>
+										</td>
+										<td>
+											<input type="text" ng-model="v.value" class="input-mini" placeholder="Value" ng-disabled="!v._editing"/>
+										</td>
+										<td>
+											<button class="btn btn-mini"  ng-hide="v._editing"
+												ng-click="v._editing=true"><i class="icon-lock"></i></button>
+											<button class="btn btn-mini"  ng-hide="!v._editing"
+												ng-click="v._editing=false"><i class="icon-pencil"></i></button>	
+										</td>
+										<td>
+											<input type="text" ng-model="v.key" class="input-mini" placeholder="Key" ng-disabled="!v._editing"/>
+										</td>
+										<td>
+											<button class="btn btn-mini btn-warning"  ng-disabled="$index <= 0"
+													ng-click="moveKeyValue(question,$index,$index-1)"><i class="icon-arrow-up icon-white"></i></button>
+										</td>
+										<td>
+											<button class="btn btn-mini btn-warning"  ng-disabled="$index >= question.options.values.length-1"
+												ng-click="moveKeyValue(question,$index,$index+1)"><i class="icon-arrow-down icon-white"></i></button>
+										</td>
+									</tr>
+								</table>
 							</div>
 						</div>
-						<div class="control-group" ng-show="question.type=='Single Selection'">
-							<label class="control-label" for="valueList">Show index:</label>
-							<div class="controls">
-								<input type="checkbox" ng-model="question.options.displayIndex"/>		
-							</div>
-						</div>
-						<!-- Single Selection -->
+						<!-- Single / Multiple Selection -->
 						
-						<!-- Multiple Selection -->
-						<div class="control-group" ng-show="question.type=='Multiple Selection'">
-							<label class="control-label" for="valueList">Values (comma separated list)</label>
-							<div class="controls">
-								<textarea  ng-model="question.options._tempValue" ng-change="newTextValue(question)"></textarea>
-							</div>
-						</div>
-						<div class="control-group" ng-show="question.type=='Multiple Selection'">
-							<label class="control-label" for="valueList">Show index:</label>
-							<div class="controls">
-								<input type="checkbox" ng-model="question.options.displayIndex"/>		
-							</div>
-						</div>
-						<!-- Multiple Selection -->
 						
 						<!-- Free form text -->
 						<div class="control-group" ng-show="question.type=='Free form text'">
-							<label class="control-label" for="valueList">Single line:</label>
+							<label class="control-label" >Single line:</label>
 							<div class="controls">
 								<input type="checkbox" ng-model="question.options.isSingleLine"/>
 							</div>
 						</div>
 						<div class="control-group" ng-show="question.type=='Free form text'">
-							<label class="control-label" for="valueList">Numeric:</label>
+							<label class="control-label" >Numeric:</label>
 							<div class="controls">
 								<input type="checkbox" ng-model="question.options.isNumeric"/>		
+							</div>
+						</div>	
+						<div class="control-group" ng-show="question.type=='Free form text'">
+							<label class="control-label" >Hint text:</label>
+							<div class="controls">
+								<input type="text"  placeholder="give an hint" ng-model="question.hintText"/>
 							</div>
 						</div>				
 						<!-- Free form text -->
@@ -214,12 +238,15 @@
 					<!-- PREVIEW QUESTIOn -->
 					<div class="form-horizontal collapse in" id="p__question{{$index}}">
 						<div class="muted">PREVIEW</div>
-						<h3>{{question.displayLabel}} <span ng-show="question.options.isRequired">*</span></h3>
-						<div ng-show="question.type == 'Range'">
-							  {{question.options.fromLabel}} <input type="text" class="input-small" />
-									<br/>{{question.options.toLabel}} <input type="text" class="input-small" />
-									{{question.options.endLabel}} 
-						</div>
+						<h3>
+							{{question.question}} <span ng-show="question.options.isRequired">*</span>
+							
+							<a onmouseover="j$(this).tooltip({});j$(this).tooltip('show');" 
+								data-delay="0" data-placement="right" data-container="body"
+								ng-show="question.helpText" data-toggle="tooltip" data-original-title="{{question.helpText}}">
+								<span class="badge badge-warning" style="cursor:pointer;">?</span></a>
+						</h3>
+						
 						<div ng-show="question.type == 'Numeric'">
 							<input type="text" placeholder="Numeric value" /><br/>
 						</div>
@@ -232,53 +259,43 @@
 									<div class="span1">{{question.options.maxValueLabel}}</div>
 								</div>
 						</div>
-						<div ng-show="question.type == 'Horizontal List'">
-							<span ng-repeat="v in question.options.values">
-								<input type="radio" name="chk__{{$index}}"  />
-								<span ng-show="question.options.displayIndex">{{$index+1}}</span>
-								{{v}}
-							</span>	
-						</div>
+						
 						<div ng-show="question.type == 'Single Selection'">
-							<select ng-show="question.options.displayIndex">
-								<option ng-repeat="v in question.options.values" >
-									{{$index+1+'.'}} {{v}}
-								</option>
-							</select>		
-							<select ng-hide="question.options.displayIndex"> 
-								<option ng-repeat="v in question.options.values" >
-									{{v}}
-								</option>
-							</select>		
+							<center>
+								<div class="btn-group btn-group-vertical"  data-toggle="buttons-radio">
+									<button ng-show="v.key.length>0" ng-repeat="v in question.options.values" type="button" class="btn btn-warning btn-block">
+										&nbsp;&nbsp;{{v.key}}&nbsp;&nbsp;
+									</button>
+								</div>
+							</center>
 						</div>
 						
 						<div ng-show="question.type == 'Multiple Selection'">
-							<select ng-show="question.options.displayIndex" size="3" multiple="multiple">
-								<option ng-repeat="v in question.options.values" >
-									{{$index+1+'.'}} {{v}}
-								</option>
-							</select>		
-							<select ng-hide="question.options.displayIndex" size="3" multiple="multiple"> 
-								<option ng-repeat="v in question.options.values" >
-									{{v}}
+							
+							<select size="3" multiple="multiple"> 
+								<option ng-repeat="v in question.options.values" value="{{v.value}}">
+									{{v.key}}
 								</option>
 							</select>		
 						</div>
 						
 						<div ng-show="question.type == 'Free form text'">
-							<input type="text" ng-show="question.options.isSingleLine" placeholder="Single line answer" /><br/>
-							<textarea ng-hide="question.options.isSingleLine" placeholder="Multi line answer" ></textarea>	
+							<input type="text" ng-show="question.options.isSingleLine" placeholder="{{question.hintText}}" /><br/>
+							<textarea ng-hide="question.options.isSingleLine" placeholder="{{question.hintText}}" ></textarea>	
 						</div>
 						
 					</div>
 				</td></tr>
 				</table>
+				</div>
 			</td>
 		</tr>
 
 		<tr><td>
 			<a href="#newQuestionModal" data-toggle="modal" class="btn btn-primary" ng-click="setInsertQuestionAtIndex(-1)"
 				ng-disabled="isLoading==true">Add new question <i class="icon-plus icon-white"></i></a>
+			<button class="btn btn-primary" ng-click="addNewSection($index)" 
+				 			ng-disabled="isLoading==true">Add new section <i class="icon-plus icon-white"></i></button>
 		</td></tr>
 		<tr><td>
 			<p style="center">
@@ -305,17 +322,14 @@
     	<table class="table">
     		<tr>
 				<td><button class="btn" data-dismiss="modal" ng-click="selectQuestionType('Numeric')">Numeric</button></td>
-				<td><button class="btn" data-dismiss="modal" ng-click="selectQuestionType('Range')">Range</button></td>
 				<td><button class="btn" data-dismiss="modal" ng-click="selectQuestionType('Rating')">Rating</button></td>
-			</tr><tr>
-				<td><button class="btn" data-dismiss="modal" ng-click="selectQuestionType('Horizontal List')">Horizontal List</button></td>
 				<td><button class="btn" data-dismiss="modal" ng-click="selectQuestionType('Single Selection')">Single Selection</button></td>
-				<td><button class="btn" data-dismiss="modal" ng-click="selectQuestionType('Multiple Selection')">Multiple Selection</button></td>
+				
 			</tr><tr>
+				<td><button class="btn" data-dismiss="modal" ng-click="selectQuestionType('Multiple Selection')">Multiple Selection</button></td>
 				<td><button class="btn" data-dismiss="modal" ng-click="selectQuestionType('Free form text')">Free form text</button></td>
-				<td><button class="btn" data-dismiss="modal" ng-click="selectQuestionType('Section')">Section</button></td>
 				<td></td>
-    		</tr>
+			</tr>
     	</table>
     
   </div>
